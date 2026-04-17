@@ -1,0 +1,6 @@
+{
+  "name": "AI Makeup Artist",
+  "description": "Real-time AI makeup artist that analyzes your face and outfit to provide personalized makeup recommendations.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": []
+}
