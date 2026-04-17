@@ -1,6 +1,6 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 
-export const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+export const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 export const SYSTEM_INSTRUCTION = `You are an expert AI makeup artist integrated with both static photo uploads and live camera streams.
 
