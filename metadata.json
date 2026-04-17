@@ -1,5 +1,5 @@
 {
-  "name": "AI Makeup Artist",
+  "name": "GLAMAI1.1",
   "description": "Real-time AI makeup artist that analyzes your face and outfit to provide personalized makeup recommendations.",
   "requestFramePermissions": ["camera"],
   "majorCapabilities": []

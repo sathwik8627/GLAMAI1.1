@@ -4,14 +4,14 @@
  */
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Camera, Shirt, RefreshCcw, Tag, Upload, X, Zap } from 'lucide-react';
+import { Camera, Shirt, RefreshCcw, Tag, Upload, X, Zap, Play, Square } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { MakeupRecommendation, ProductMatch } from './types';
 import { useCamera } from './hooks/useCamera';
 import { ai, SYSTEM_INSTRUCTION } from './lib/gemini';
 
 export default function App() {
-  const { stream, error: cameraError } = useCamera();
+  const { stream, error: cameraError, isActive, startCamera, stopCamera } = useCamera();
   const [activeMode, setActiveMode] = useState<'camera' | 'static'>('camera');
   const [recommendation, setRecommendation] = useState<MakeupRecommendation | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -32,7 +32,7 @@ export default function App() {
     if (isAnalyzing) return;
     
     // Throttle real-time updates (5s), but allow immediate static analysis
-    if (activeMode === 'camera' && Date.now() - lastAnalysisTime < 5000) return;
+    if (activeMode === 'camera' && (!isActive || Date.now() - lastAnalysisTime < 5000)) return;
 
     let base64Image = '';
     if (imageSource) {
@@ -54,21 +54,15 @@ export default function App() {
     setIsAnalyzing(true);
     try {
       const modePrompt = activeMode === 'static' ? 'STATIC_MODE' : 'REALTIME_MODE';
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: {
-          parts: [
-            { inlineData: { data: base64Image, mimeType: "image/jpeg" } },
-            { text: `Analyze this image in ${modePrompt} and provide suggestions.` }
-          ]
-        },
-        config: {
-          systemInstruction: SYSTEM_INSTRUCTION,
-          responseMimeType: "application/json",
-        }
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64Image, mode: activeMode })
       });
 
-      const data = JSON.parse(response.text || '{}');
+      if (!response.ok) throw new Error('Failed to analyze');
+      
+      const data = await response.json();
       setRecommendation(data);
       setLastAnalysisTime(Date.now());
     } catch (err) {
@@ -151,8 +145,27 @@ export default function App() {
                 className="glass-pill flex items-center gap-2 hover:bg-white/20 transition-all"
               >
                 <Upload className="w-3.5 h-3.5" />
-                <span className="text-[10px] hidden sm:inline">UPLOAD PHOTO</span>
+                <span className="text-[10px] hidden sm:inline">UPLOAD</span>
               </button>
+
+              {activeMode === 'camera' && (
+                <button 
+                  onClick={isActive ? stopCamera : startCamera}
+                  className={`glass-pill flex items-center gap-2 transition-all ${isActive ? 'bg-red-500/20 hover:bg-red-500/30 border-red-500/40' : 'bg-green-500/20 hover:bg-green-500/30 border-green-500/40'}`}
+                >
+                  {isActive ? (
+                    <>
+                      <Square className="w-3.5 h-3.5 text-red-400" fill="currentColor" />
+                      <span className="text-[10px] hidden sm:inline">STOP FEED</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-3.5 h-3.5 text-green-400" fill="currentColor" />
+                      <span className="text-[10px] hidden sm:inline">START FEED</span>
+                    </>
+                  )}
+                </button>
+              )}
             </div>
             
             {isAnalyzing && (
@@ -191,18 +204,22 @@ export default function App() {
           className="hidden" 
         />
 
-        {activeMode === 'camera' && cameraError && (
+        {activeMode === 'camera' && (cameraError || !isActive) && (
           <div className="absolute inset-0 flex items-center justify-center p-8 bg-black/80 backdrop-blur-xl pointer-events-auto">
             <div className="bg-white p-10 rounded-[40px] text-center max-w-sm shadow-2xl">
               <Camera className="w-16 h-16 text-neutral-900 mx-auto mb-6" />
-              <h2 className="text-2xl font-bold mb-3">Camera Access</h2>
-              <p className="text-neutral-500 text-sm mb-8 leading-relaxed">Please enable camera to use real-time features, or upload a photo.</p>
+              <h2 className="text-2xl font-bold mb-3">
+                {cameraError ? 'Camera Access' : 'Feed Paused'}
+              </h2>
+              <p className="text-neutral-500 text-sm mb-8 leading-relaxed">
+                {cameraError ? cameraError : 'Resume the camera feed to continue real-time analysis.'}
+              </p>
               <div className="grid grid-cols-2 gap-4">
                 <button 
-                  onClick={() => window.location.reload()}
+                  onClick={startCamera}
                   className="bg-neutral-900 text-white py-3 rounded-2xl font-bold text-sm"
                 >
-                  Retry
+                  {cameraError ? 'Retry' : 'Resume'}
                 </button>
                 <button 
                   onClick={() => fileInputRef.current?.click()}
