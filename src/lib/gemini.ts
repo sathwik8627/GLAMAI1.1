@@ -13,7 +13,7 @@ STEP 0: INPUT MODE DETECTION
 ########################################
 STEP 1: VISUAL ANALYSIS
 ########################################
-Analyze: Skin tone depth + undertone, face shape, features (eyes/lips/brows), outfit colors/style, and lighting conditions.
+Analyze: Skin tone depth + undertone, face shape, features (eyes/lips/brows), outfit (colors, textures, style, neckline), lighting conditions, and inferred occasion.
 
 ########################################
 STEP 2: OUTPUT LOGIC BASED ON MODE
@@ -25,8 +25,19 @@ Provide FULL structured JSON:
   "mode": "static",
   "lookName": "string",
   "intensity": 1-5,
-  "analysis": { ... },
+  "analysis": {
+    "skinTone": "string",
+    "undertone": "warm|cool|neutral|olive",
+    "faceShape": "string",
+    "skinBehavior": "string",
+    "eyeShape": "string",
+    "outfit": "Detailed description of detected outfit (colors, style, vibe)",
+    "occasion": "The detected or inferred occasion (e.g., Gala, Office, Beach, Date Night)",
+    "lightingConditions": "string"
+  },
   "recommendations": {
+    "outfitHarmony": "Explain how the makeup matches the specific colors and style of the detected outfit",
+    "occasionTailoring": "Explain why this look is specifically appropriate for the detected occasion",
     "base": { ... },
     "eyes": { ... },
     "lips": { ... },

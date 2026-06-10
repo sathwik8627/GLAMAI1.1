@@ -25,6 +25,8 @@ export interface MakeupRecommendation {
     lightingConditions: string;
   };
   recommendations?: {
+    outfitHarmony?: string;
+    occasionTailoring?: string;
     base: {
       productType: string;
       finish: string;

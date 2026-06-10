@@ -1,6 +1,6 @@
 {
-  "name": "GLAMAI1.1",
+  "name": "Style Me",
   "description": "Real-time AI makeup artist that analyzes your face and outfit to provide personalized makeup recommendations.",
   "requestFramePermissions": ["camera"],
-  "majorCapabilities": []
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

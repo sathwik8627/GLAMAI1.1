@@ -17,6 +17,7 @@ export default function App() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [lastAnalysisTime, setLastAnalysisTime] = useState(0);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [userContext, setUserContext] = useState('');
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -53,11 +54,10 @@ export default function App() {
 
     setIsAnalyzing(true);
     try {
-      const modePrompt = activeMode === 'static' ? 'STATIC_MODE' : 'REALTIME_MODE';
       const response = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: base64Image, mode: activeMode })
+        body: JSON.stringify({ image: base64Image, mode: activeMode, userContext })
       });
 
       if (!response.ok) throw new Error('Failed to analyze');
@@ -133,39 +133,52 @@ export default function App() {
 
         <div className="absolute inset-0 p-6 sm:p-10 flex flex-col justify-between pointer-events-none">
           <div className="flex items-center justify-between pointer-events-auto">
-            <div className="flex gap-2">
-              <div className="glass-pill flex items-center gap-3">
-                <div className={`w-2 h-2 ${activeMode === 'camera' ? 'bg-green-400' : 'bg-blue-400'} rounded-full shadow-[0_0_12px_currentColor]`} />
-                <span className="text-[11px] sm:text-[13px] tracking-widest uppercase">
-                  {activeMode === 'camera' ? (recommendation?.lookName || 'REAL-TIME') : 'PRECISION MODE'}
-                </span>
-              </div>
-              <button 
-                onClick={() => fileInputRef.current?.click()}
-                className="glass-pill flex items-center gap-2 hover:bg-white/20 transition-all"
-              >
-                <Upload className="w-3.5 h-3.5" />
-                <span className="text-[10px] hidden sm:inline">UPLOAD</span>
-              </button>
-
-              {activeMode === 'camera' && (
+            <div className="flex flex-col gap-3">
+              <div className="flex gap-2">
+                <div className="glass-pill flex items-center gap-3">
+                  <div className={`w-2 h-2 ${activeMode === 'camera' ? 'bg-green-400' : 'bg-blue-400'} rounded-full shadow-[0_0_12px_currentColor]`} />
+                  <span className="text-[11px] sm:text-[13px] tracking-widest uppercase">
+                    {activeMode === 'camera' ? (recommendation?.lookName || 'REAL-TIME') : 'PRECISION MODE'}
+                  </span>
+                </div>
                 <button 
-                  onClick={isActive ? stopCamera : startCamera}
-                  className={`glass-pill flex items-center gap-2 transition-all ${isActive ? 'bg-red-500/20 hover:bg-red-500/30 border-red-500/40' : 'bg-green-500/20 hover:bg-green-500/30 border-green-500/40'}`}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="glass-pill flex items-center gap-2 hover:bg-white/20 transition-all"
                 >
-                  {isActive ? (
-                    <>
-                      <Square className="w-3.5 h-3.5 text-red-400" fill="currentColor" />
-                      <span className="text-[10px] hidden sm:inline">STOP FEED</span>
-                    </>
-                  ) : (
-                    <>
-                      <Play className="w-3.5 h-3.5 text-green-400" fill="currentColor" />
-                      <span className="text-[10px] hidden sm:inline">START FEED</span>
-                    </>
-                  )}
+                  <Upload className="w-3.5 h-3.5" />
+                  <span className="text-[10px] hidden sm:inline">UPLOAD</span>
                 </button>
-              )}
+
+                {activeMode === 'camera' && (
+                  <button 
+                    onClick={isActive ? stopCamera : startCamera}
+                    className={`glass-pill flex items-center gap-2 transition-all ${isActive ? 'bg-red-500/20 hover:bg-red-500/30 border-red-500/40' : 'bg-green-500/20 hover:bg-green-500/30 border-green-500/40'}`}
+                  >
+                    {isActive ? (
+                      <>
+                        <Square className="w-3.5 h-3.5 text-red-400" fill="currentColor" />
+                        <span className="text-[10px] hidden sm:inline">STOP FEED</span>
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-3.5 h-3.5 text-green-400" fill="currentColor" />
+                        <span className="text-[10px] hidden sm:inline">START FEED</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+              
+              <div className="relative group max-w-xs">
+                <input 
+                  type="text"
+                  placeholder="Set vibe (e.g. Wedding, Date, Work)..."
+                  value={userContext}
+                  onChange={(e) => setUserContext(e.target.value)}
+                  className="w-full bg-black/40 backdrop-blur-md border border-white/10 rounded-full px-4 py-1.5 text-[11px] text-white placeholder:text-white/30 focus:outline-none focus:border-white/30 transition-all shadow-xl"
+                />
+                <Zap className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-white/20 group-focus-within:text-pink-400 transition-colors" />
+              </div>
             </div>
             
             {isAnalyzing && (
@@ -284,6 +297,38 @@ export default function App() {
           
           {recommendation ? (
             <div className="space-y-10">
+              {recommendation.mode === 'static' && recommendation.recommendations?.occasionTailoring && (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="bg-neutral-900 p-6 rounded-[30px] border border-white/10"
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <Zap className="w-4 h-4 text-blue-400" />
+                    <span className="text-[10px] uppercase font-bold text-white/40 tracking-[0.2em]">Occasion Tailoring</span>
+                  </div>
+                  <p className="text-[13px] text-white/80 font-medium leading-relaxed italic">
+                    {recommendation.recommendations.occasionTailoring}
+                  </p>
+                </motion.div>
+              )}
+
+              {recommendation.mode === 'static' && recommendation.recommendations?.outfitHarmony && (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="bg-neutral-900 p-6 rounded-[30px] border border-white/10"
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <Shirt className="w-4 h-4 text-pink-400" />
+                    <span className="text-[10px] uppercase font-bold text-white/40 tracking-[0.2em]">Outfit Harmony</span>
+                  </div>
+                  <p className="text-[13px] text-white/80 font-medium leading-relaxed italic">
+                    {recommendation.recommendations.outfitHarmony}
+                  </p>
+                </motion.div>
+              )}
+
               {recommendation.mode === 'realtime' && recommendation.quickSuggestions ? (
                 <div className="space-y-4">
                   {recommendation.quickSuggestions.map((suggestion, i) => (

@@ -7,7 +7,7 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    const { image, mode } = req.body;
+    const { image, mode, userContext } = req.body;
     if (!image) return res.status(400).json({ error: "Image is required" });
 
     const apiKey = process.env.GEMINI_API_KEY;
@@ -17,13 +17,14 @@ export default async function handler(req: any, res: any) {
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const modePrompt = mode === 'static' ? 'STATIC_MODE' : 'REALTIME_MODE';
+    const userPrompt = userContext ? `User context: "${userContext}". ` : "";
     
     const result = await model.generateContent({
       contents: [{
         role: "user",
         parts: [
           { inlineData: { data: image, mimeType: "image/jpeg" } },
-          { text: `Analyze this image in ${modePrompt} and provide makeup suggestions accordingly. Use the system instructions provided.` }
+          { text: `Analyze this image in ${modePrompt} mode. ${userPrompt}Detect the likely occasion based on the outfit and any user input provided. Ensure makeup recommendations are tailored to this occasion (e.g., professional, glam, effortless). Pay attention to outfit harmony as well. Response MUST be valid JSON per system instructions.` }
         ]
       }],
       generationConfig: {
